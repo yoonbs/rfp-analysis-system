@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 · RFP 분석 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="w-full max-w-sm bg-white border border-gray-800 shadow-sm">
+        <div class="bg-gray-800 text-white px-5 py-4">
+            <h1 class="font-bold text-sm tracking-wide">RFP 분석 시스템</h1>
+            <p class="text-xs text-gray-300 mt-1">R&amp;D 사업 제안요청서 분석 시스템</p>
+        </div>
+
+        <form method="post" class="p-6 space-y-4">
+            <div>
+                <label for="password" class="block text-sm font-bold text-gray-700 mb-2">접속 비밀번호</label>
+                <input type="password" id="password" name="password" autofocus required autocomplete="current-password"
+                       class="w-full p-2.5 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-gray-800"
+                       placeholder="비밀번호를 입력하세요">
+            </div>
+
+            {% if error %}
+            <div class="text-sm text-red-700 bg-red-50 border border-red-300 px-3 py-2 rounded-sm">
+                <i class="fa-solid fa-circle-exclamation mr-1"></i>{{ error }}
+            </div>
+            {% endif %}
+
+            <button type="submit"
+                    class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 rounded-sm transition text-sm">
+                <i class="fa-solid fa-right-to-bracket mr-2"></i>접속
+            </button>
+        </form>
+
+        <div class="px-6 py-3 bg-gray-50 border-t border-gray-300 text-xs text-gray-500">
+            인가된 사용자만 이용할 수 있습니다.
+        </div>
+    </div>
+</body>
+</html>

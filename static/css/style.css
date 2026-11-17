@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+body {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    background-color: #f3f4f6; /* gray-100 */
+    color: #111827; /* gray-900 */
+}
+
+/* 탭 및 내비게이션 스타일 (포멀 스타일) */
+.nav-item {
+    border-left: 4px solid transparent;
+}
+.nav-item.active {
+    background-color: #f9fafb;
+    color: #111827;
+    border-left: 4px solid #1f2937; /* gray-800 */
+    font-weight: 700;
+}
+
+.section-content, .view-panel {
+    display: none;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.section-content.active, .view-panel.active {
+    display: block;
+}
+
+#view-result.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 간트 차트 스타일 */
+.gantt-grid {
+    display: grid;
+    grid-template-columns: 200px repeat(3, 1fr);
+    gap: 1px;
+    background-color: #d1d5db; /* gray-300 */
+    border: 1px solid #9ca3af;
+}
+.gantt-header, .gantt-cell {
+    background-color: #ffffff;
+    padding: 10px;
+}
+.gantt-header {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    text-align: center;
+    border-bottom: 1px solid #9ca3af;
+}
+.gantt-task {
+    background-color: #ffffff;
+    padding: 10px;
+    font-weight: 500;
+}
+.gantt-bar-container {
+    display: flex;
+    align-items: center;
+    padding: 0 5px;
+}
+.gantt-bar {
+    height: 18px;
+    background: #1e3a8a; /* blue-900 */
+    border-radius: 2px;
+}
+
+/* 상태 배지 색상 (포멀 아웃라인) */
+.badge-high { background-color: #ffffff; color: #15803d; border: 1px solid #15803d; }
+.badge-medium { background-color: #ffffff; color: #b45309; border: 1px solid #b45309; }
+.badge-low { background-color: #ffffff; color: #b91c1c; border: 1px solid #b91c1c; }
+
+thead tr th { border-bottom: 2px solid #374151 !important; }
+
+/* 파일 드롭존 */
+.dropzone {
+    border: 2px dashed #9ca3af;
+    background-color: #f9fafb;
+    transition: all 0.2s;
+}
+.dropzone.dragover {
+    border-color: #1f2937;
+    background-color: #f3f4f6;
+}
+
+/* 로딩 스피너 */
+.loader {
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #1f2937;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* 모달 백그라운드 */
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+/* 인쇄용 스타일 */
+@media print {
+    body { background-color: white; height: auto; overflow: visible; display: block; }
+    .no-print { display: none !important; }
+    .section-content { display: block !important; opacity: 1 !important; margin-bottom: 2rem; page-break-inside: avoid; }
+    .print-break { page-break-before: always; }
+    .sidebar { display: none !important; }
+    .main-content { margin-left: 0 !important; width: 100% !important; padding: 0 !important; border: none !important; }
+    header { position: static !important; border-bottom: 2px solid #000; }
+    .gantt-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #view-upload { display: none !important; }
+    #view-result { display: block !important; overflow: visible !important; }
+    #view-result > div { overflow: visible !important; }
+}

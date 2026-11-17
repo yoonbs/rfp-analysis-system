@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Header (분석 결과 뷰에서만 노출) -->
+<header id="result-header" class="bg-white border-b-2 border-gray-800 sticky top-0 z-10 px-6 py-4 flex justify-between items-center hidden">
+    <div>
+        <div class="flex items-center gap-2 mb-1">
+            <span id="badge-recommendation" class="px-2 py-0.5 text-xs font-bold rounded-sm"></span>
+            <span class="text-sm text-gray-600 font-medium border border-gray-300 px-2 py-0.5 bg-gray-50 rounded-sm">
+                D-Day: <span id="header-dday" class="text-red-700 font-bold"></span>
+            </span>
+        </div>
+        <h2 id="header-title" class="text-xl font-bold text-gray-900 leading-tight tracking-tight"></h2>
+    </div>
+    <div class="flex gap-2 no-print">
+        <button onclick="downloadJSON()" class="bg-white hover:bg-gray-100 text-gray-800 px-3 py-1.5 text-sm font-medium transition flex items-center gap-2 border border-gray-400 rounded-sm">
+            <i class="fa-solid fa-download"></i> JSON
+        </button>
+        <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1.5 text-sm font-medium transition flex items-center gap-2 border border-gray-800 rounded-sm">
+            <i class="fa-solid fa-print"></i> 보고서 인쇄
+        </button>
+    </div>
+</header>
+
+<!-- View 1: 업로드 및 텍스트 추출 화면 -->
+<main id="view-upload" class="view-panel active flex-1 overflow-y-auto p-8 bg-gray-50">
+    <div class="max-w-4xl mx-auto">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 border-b border-gray-400 pb-2">RFP 문서 업로드</h2>
+
+        <div class="bg-white border border-gray-300 p-6 shadow-sm mb-6">
+            <div id="dropzone" class="dropzone p-10 flex flex-col items-center justify-center cursor-pointer mb-4">
+                <i class="fa-solid fa-file-arrow-up text-4xl text-gray-400 mb-3"></i>
+                <p class="text-gray-700 font-medium mb-1">클릭하거나 파일을 이곳으로 드래그하세요.</p>
+                <p class="text-xs text-gray-500">지원 형식: PDF, HWPX, TXT (HWP는 변환 후 업로드 권장)</p>
+                <input type="file" id="file-input" class="hidden" accept=".pdf,.hwpx,.hwp,.txt">
+            </div>
+
+            <div class="flex items-center gap-4 mb-4">
+                <div class="h-px bg-gray-300 flex-1"></div>
+                <span class="text-xs text-gray-500 font-bold uppercase">OR</span>
+                <div class="h-px bg-gray-300 flex-1"></div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-bold text-gray-700 mb-2">텍스트 직접 입력 (또는 추출 결과 확인)</label>
+                <textarea id="text-input" class="w-full h-48 p-3 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-gray-800" placeholder="RFP 내용을 직접 붙여넣거나, 파일을 업로드하면 이곳에 텍스트가 추출됩니다."></textarea>
+                <div class="text-right text-xs text-gray-500 mt-1">글자 수: <span id="text-length">0</span> 자</div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button onclick="startAnalysis()" id="btn-analyze" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-6 rounded-sm transition">
+                    <i class="fa-solid fa-microchip mr-2"></i> AI 분석 시작
+                </button>
+            </div>
+        </div>
+
+        <!-- 상태 표시 -->
+        <div id="status-panel" class="hidden bg-white border border-gray-300 p-4 shadow-sm flex items-center gap-4">
+            <div class="loader" id="status-spinner"></div>
+            <div class="flex-1">
+                <h4 class="font-bold text-sm text-gray-900" id="status-title">처리 중...</h4>
+                <p class="text-xs text-gray-600" id="status-desc">잠시만 기다려주세요.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- View 2: 분석 결과 대시보드 화면 -->
+<main id="view-result" class="view-panel flex-1 overflow-hidden flex flex-col bg-white">
+
+    <!-- Result Navigation -->
+    <div class="bg-gray-50 border-b border-gray-300 flex px-4 no-print" id="nav-menu">
+        <button class="nav-item active px-5 py-3 text-gray-600 hover:bg-gray-100 transition text-sm font-medium" data-target="sec-1">1. 사업 개요</button>
+        <button class="nav-item px-5 py-3 text-gray-600 hover:bg-gray-100 transition text-sm font-medium" data-target="sec-2">2. 사업 목표</button>
+        <button class="nav-item px-5 py-3 text-gray-600 hover:bg-gray-100 transition text-sm font-medium" data-target="sec-3">3. 수행 내용</button>
+        <button class="nav-item px-5 py-3 text-gray-600 hover:bg-gray-100 transition text-sm font-medium" data-target="sec-4">4. TTA 수행 가능성</button>
+        <button class="nav-item px-5 py-3 text-gray-600 hover:bg-gray-100 transition text-sm font-medium" data-target="sec-5">5. 종합 판단</button>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-8 border-l border-gray-200">
+        <!-- Section 1 -->
+        <section id="sec-1" class="section-content active">
+            <h2 class="text-xl font-bold border-b border-gray-400 pb-2 mb-6 text-gray-900">1. 사업 개요 요약</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-0 border border-gray-300">
+                <div class="p-5 border-b md:border-b-0 md:border-r border-gray-300 bg-white">
+                    <h3 class="text-sm font-bold text-gray-800 mb-3 bg-gray-100 p-2 border-l-4 border-gray-600">기본 정보</h3>
+                    <table class="w-full text-sm">
+                        <tbody class="divide-y divide-gray-100">
+                            <tr><td class="py-2 text-gray-600 font-semibold w-1/3">주관 부처/전문기관</td><td class="py-2 text-gray-900" id="v-agency"></td></tr>
+                            <tr><td class="py-2 text-gray-600 font-semibold">공고 번호</td><td class="py-2 text-gray-900 font-mono text-xs" id="v-noticeNumber"></td></tr>
+                            <tr><td class="py-2 text-gray-600 font-semibold">총 사업 기간</td><td class="py-2 text-gray-900" id="v-duration"></td></tr>
+                            <tr><td class="py-2 text-gray-600 font-semibold">예산 규모</td><td class="py-2 text-gray-900" id="v-budget"></td></tr>
+                            <tr><td class="py-2 text-gray-600 font-semibold">민간 부담금</td><td class="py-2 text-gray-600" id="v-fundingRatio"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-5 bg-white">
+                    <h3 class="text-sm font-bold text-gray-800 mb-3 bg-gray-100 p-2 border-l-4 border-gray-600">자격 및 일정</h3>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <h4 class="font-semibold text-gray-600 mb-1">신청 자격 및 컨소시엄 요건</h4>
+                            <p class="text-gray-900" id="v-eligibility"></p>
+                        </div>
+                        <div class="pt-4 border-t border-gray-200">
+                            <h4 class="font-semibold text-gray-600 mb-1">주요 일정</h4>
+                            <p class="text-red-700 font-medium" id="v-dates"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2 -->
+        <section id="sec-2" class="section-content print-break">
+            <h2 class="text-xl font-bold border-b border-gray-400 pb-2 mb-6 text-gray-900">2. 사업 목표 분석</h2>
+            <div class="mb-6 border border-gray-300 p-5 bg-gray-50">
+                <h3 class="text-sm font-bold text-gray-700 mb-2">[최종 목표]</h3>
+                <p class="text-base font-medium text-gray-900 leading-relaxed" id="v-finalGoal"></p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" id="v-annualGoals"></div>
+            <h3 class="text-md font-bold text-gray-800 mb-3">정량 성과지표 (KPI)</h3>
+            <div class="border border-gray-300 mb-8 overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-100 text-gray-800 font-bold border-b-2 border-gray-400">
+                        <tr>
+                            <th class="px-4 py-2 border-r border-gray-300">지표명</th>
+                            <th class="px-4 py-2 border-r border-gray-300">목표치</th>
+                            <th class="px-4 py-2 border-r border-gray-300">측정 방법</th>
+                            <th class="px-4 py-2 border-r border-gray-300">측정 시점</th>
+                            <th class="px-4 py-2 text-center">출처</th>
+                        </tr>
+                    </thead>
+                    <tbody id="v-kpis" class="divide-y divide-gray-200 bg-white"></tbody>
+                </table>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border border-gray-300 p-5 bg-white">
+                <div class="border-r md:border-gray-200 pr-4">
+                    <h3 class="text-sm font-bold text-gray-700 mb-2">정책적 배경 (상위 계획)</h3>
+                    <p class="text-sm text-gray-700" id="v-policyBackground"></p>
+                </div>
+                <div class="pl-0 md:pl-4 pt-4 md:pt-0 border-t md:border-t-0 border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-700 mb-2">핵심 키워드</h3>
+                    <div class="flex flex-wrap gap-1.5" id="v-keywords"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3 -->
+        <section id="sec-3" class="section-content print-break">
+            <h2 class="text-xl font-bold border-b border-gray-400 pb-2 mb-6 text-gray-900">3. 수행 내용 분석</h2>
+            <div class="mb-8">
+                <h3 class="text-md font-bold text-gray-800 mb-3">세부 과제 구성 (WBS)</h3>
+                <div class="border border-gray-300 divide-y divide-gray-200" id="v-wbs"></div>
+            </div>
+            <div class="mb-8">
+                <h3 class="text-md font-bold text-gray-800 mb-3">주요 산출물 요구사항</h3>
+                <div class="border border-gray-300 bg-gray-50 p-4 text-gray-800 text-sm font-medium" id="v-deliverables"></div>
+            </div>
+            <div class="mb-4">
+                <h3 class="text-md font-bold text-gray-800 mb-3">연차별 수행 일정 (Gantt Chart)</h3>
+                <div class="gantt-grid text-sm" id="v-gantt">
+                    <div class="gantt-header border-r border-gray-300">세부 태스크</div>
+                    <div class="gantt-header border-r border-gray-300">1차년도</div>
+                    <div class="gantt-header border-r border-gray-300">2차년도</div>
+                    <div class="gantt-header">3차년도</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4 -->
+        <section id="sec-4" class="section-content print-break">
+            <div class="flex justify-between items-center border-b border-gray-400 pb-2 mb-6">
+                <h2 class="text-xl font-bold text-gray-900">4. TTA SW시험인증연구소 관점 분석</h2>
+                <button onclick="reanalyzeSection45()" class="no-print bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 text-xs font-bold rounded-sm border border-gray-400 flex items-center gap-1">
+                    <i class="fa-solid fa-rotate"></i> 역량 기반 재분석
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div class="border border-gray-800 bg-white">
+                    <div class="bg-gray-800 text-white p-2 border-b border-gray-800">
+                        <h3 class="font-bold text-sm text-center">참여 형태 제안</h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="text-lg font-bold text-gray-900 mb-2 text-center" id="v-role"></div>
+                        <p class="text-sm text-gray-700 leading-relaxed mb-4 border-t border-gray-200 pt-3" id="v-roleReason"></p>
+                        <div class="bg-gray-100 p-2 text-sm text-gray-700 border border-gray-300">
+                            <span class="font-bold">예상 역할/예산:</span> <span id="v-tasksAndBudget"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="border border-gray-400 bg-white">
+                    <div class="bg-gray-200 text-gray-900 p-2 border-b border-gray-400">
+                        <h3 class="font-bold text-sm text-center">역량 갭(Gap) 및 보완 방안</h3>
+                    </div>
+                    <div class="p-4 h-full">
+                        <p class="text-sm text-gray-700 leading-relaxed" id="v-gaps"></p>
+                    </div>
+                </div>
+            </div>
+            <h3 class="text-md font-bold text-gray-800 mb-3">연구소 역량 매핑</h3>
+            <div class="border border-gray-300 mb-8 overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-100 text-gray-800 font-bold border-b-2 border-gray-400">
+                        <tr>
+                            <th class="px-4 py-2 border-r border-gray-300 w-1/3">RFP 요구사항</th>
+                            <th class="px-4 py-2 border-r border-gray-300 w-1/3">TTA 연구소 역량</th>
+                            <th class="px-4 py-2 border-r border-gray-300 text-center w-24">적합도</th>
+                            <th class="px-4 py-2">분석 의견</th>
+                        </tr>
+                    </thead>
+                    <tbody id="v-mapping" class="divide-y divide-gray-200 bg-white"></tbody>
+                </table>
+            </div>
+            <h3 class="text-md font-bold text-gray-800 mb-3">잠재적 리스크 분석</h3>
+            <div class="border border-gray-300 divide-y divide-gray-200" id="v-risks"></div>
+        </section>
+
+        <!-- Section 5 -->
+        <section id="sec-5" class="section-content print-break">
+            <h2 class="text-xl font-bold border-b border-gray-400 pb-2 mb-6 text-gray-900">5. 종합 판단 및 제언</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8 border border-gray-300 bg-white p-6">
+                <div class="lg:col-span-2 border-b lg:border-b-0 lg:border-r border-gray-200 pb-6 lg:pb-0 lg:pr-6 flex flex-col items-center justify-center">
+                    <h3 class="text-sm font-bold text-gray-800 mb-4 w-full text-center">[수행 가능성 진단 지수]</h3>
+                    <div class="relative w-full max-w-[250px] aspect-square">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center border-t border-gray-200 pt-4 w-full">
+                        <span class="text-sm text-gray-600 font-semibold">종합 평가 점수</span>
+                        <div class="text-3xl font-black text-gray-900 mt-1" id="v-totalScore"></div>
+                    </div>
+                </div>
+                <div class="lg:col-span-3 lg:pl-4 flex flex-col justify-center">
+                    <div class="mb-6">
+                        <h3 class="text-md font-bold text-gray-900 mb-2 border-l-4 border-gray-800 pl-2">최종 권고의견</h3>
+                        <p class="text-gray-800 font-medium leading-relaxed bg-gray-50 p-3 border border-gray-200 text-sm" id="v-recommendationDesc"></p>
+                    </div>
+                    <div>
+                        <h3 class="text-md font-bold text-gray-900 mb-2 border-l-4 border-gray-400 pl-2">제안서 차별화 포인트</h3>
+                        <ul class="space-y-1 list-disc list-inside text-sm text-gray-700 ml-1" id="v-points"></ul>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-md font-bold text-gray-900 mb-3 bg-gray-100 p-2 border-l-4 border-gray-600">Next Step: To-Do 체크리스트</h3>
+                <ul class="space-y-0 border border-gray-300 divide-y divide-gray-200" id="v-todo"></ul>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

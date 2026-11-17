@@ -1,0 +1,11 @@
+.env
+*.db
+__pycache__/
+*.pyc
+.venv/
+venv/
+instance/
+.vercel/
+.vercel
+.env*
+!.env.example
